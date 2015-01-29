@@ -1,0 +1,31 @@
+﻿@{
+    ViewBag.Title = "积压警报";
+}
+
+<html>
+<head>
+    <script type="text/javascript">
+        function go() {
+            location.href = "/Statistics/GetStorageWarnning?type=low";
+        }
+    </script>
+</head>
+<body>
+    <center>
+      <div style="background-image:url(../../images/warnlow.png);background-repeat:no-repeat;height:100%">
+            <br />      
+             <br />      
+             <br />      
+             <br />      
+             <br />  <br />  <br />      
+             <br />  <br />      
+             <br />        
+           <div>
+             <a border="0" href="javascript:void(0)" onclick="go()">
+                 <img src="../../images/showde.gif" />
+             </a>
+         </div> 
+      </div>
+   </center>
+</body>
+</html>

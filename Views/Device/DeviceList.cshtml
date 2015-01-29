@@ -1,0 +1,783 @@
+﻿@{
+    Layout = null;
+}
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title></title>
+    <script src="~/js/jquery-1.8.2.min.js"></script>
+    <link href="~/lib/ligerUI/skins/Aqua/css/ligerui-all.css" rel="stylesheet" />
+    <link href="~/lib/ligerUI/skins/ligerui-icons.css" rel="stylesheet" />
+    <link href="~/lib/ligerUI/skins/Gray/css/all.css" rel="stylesheet" type="text/css" />
+    <script src="~/lib/ligerUI/js/core/base.js" type="text/javascript"></script>
+    <script src="~/lib/ligerUI/js/plugins/ligerGrid.js" type="text/javascript"></script>
+    <script src="~/lib/ligerUI/js/plugins/ligerToolBar.js" type="text/javascript"></script>
+    <script src="~/lib/ligerUI/js/plugins/ligerResizable.js"></script>
+    <script src="~/lib/ligerUI/js/plugins/ligerCheckBox.js"></script>
+    <script src="~/lib/ligerUI/js/plugins/ligerForm.js" type="text/javascript"></script>
+    <script src="~/lib/ligerUI/js/plugins/ligerDateEditor.js" type="text/javascript"></script>
+    <script src="~/lib/ligerUI/js/plugins/ligerComboBox.js" type="text/javascript"></script>
+    <script src="~/lib/ligerUI/js/plugins/ligerCheckBox.js" type="text/javascript"></script>
+    <script src="~/lib/ligerUI/js/plugins/ligerButton.js" type="text/javascript"></script>
+    <script src="~/lib/ligerUI/js/plugins/ligerDialog.js" type="text/javascript"></script>
+    <script src="~/lib/ligerUI/js/plugins/ligerRadio.js" type="text/javascript"></script>
+    <script src="~/lib/ligerUI/js/plugins/ligerSpinner.js" type="text/javascript"></script>
+    <script src="~/lib/ligerUI/js/plugins/ligerTextBox.js" type="text/javascript"></script>
+    <script src="~/lib/ligerUI/js/plugins/ligerGrid.js" type="text/javascript"></script>
+    <script src="~/lib/ligerUI/js/ligerui.all.js"></script>
+    <script src="~/lib/ligerUI/js/ligerui.expand.js"></script>
+    <script src="~/lib/ligerUI/js/plugins/ligerTip.js"></script>
+    <script src="~/lib/jquery-validation/jquery.metadata.js"></script>
+    <script src="~/lib/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation/messages_cn.js"></script>
+    <script src="~/lib/json2.js"></script>
+    <script src="~/lib/ligerUI/js/LG.js"></script>
+
+    <script type="text/javascript">
+        var g,gs,addDeviceDialog,storageDialog, addDeviceDetailsDialog, addDeviceInDialog, addDeviceOutDialog, editDeviceDialog;
+        var searchForm, searchButtons;
+        var groupicon = "../../../lib/ligerUI/skins/icons/search.gif";
+        $(function () {
+
+            $("#pageloading").hide();
+            setStorage();
+            setGrids();
+
+            //搜索表单应用ligerui样式
+            $("#btnsearch").ligerTip();
+
+            searchForm = $("#formsearch").ligerForm({
+                fields: [{ display: "关键字", name: "key", type: "text", cssClass: "field", group: "搜索", groupicon: groupicon }],
+            });
+
+            searchButtons = $("#btnsearch").ligerButton(
+            {
+                click: function () {
+                    device_search();
+                }
+            }
+            );
+            searchButtons.setValue("搜索关键字");//设置ligerButton的显示
+        });
+        function setGrids() {
+            g = $("#maingrid").ligerGrid({
+                height: '90%',
+                width: '100%',
+                columns: [
+                { display: '名称', name: 'Name' },
+                { display: '型号', name: 'Mode' },
+                { display: '品牌', name: 'Brand' },
+                { display: '数量', name: 'Num' },
+                { display: '价格', name: 'Price' },
+                { display: '货架编号', name: 'PlaceNumber' },
+                { display: '订货号', name: 'SeriesID' },
+                {
+                    display: '高低储', isAllowHide: false,
+                    render: function (row) {
+                        var htm = '<a href="javascript:void(0)" border="0" onclick="showStorage(' + row.ID + ')"> <img style="width:80px;height:25px;margin-top:3px;" src="../../images/showst.png">    </a>';
+                        return htm;
+                    }
+                }
+                ],
+                url: "/Device/GetDevice?key=" + "",
+                usePager: true,
+                pageSize: 15,
+                rownumbers: true,
+                toolbar: {
+                    items: [
+                    { text: '刷新', click: itemclick, icon: 'refresh', id: 'refreshDevice' },
+                    { line: true },
+                    { text: '增加设备', click: itemclick, icon: 'add', id: 'addDevice' },
+                    { line: true },
+                    { text: '修改设备', click: itemclick, icon: 'modify', id: 'modifyDevice' },
+                    { line: true },
+                    { text: '删除设备', click: itemclick, icon: 'delete', id: 'deleteDevice' },
+                    { line: true },
+                    { text: '出库', click: itemclick, icon: 'discuss', id: 'deviceOut' },
+                    { line: true },
+                    { text: '入库', click: itemclick, icon: 'customers', id: 'deviceIn' },
+                    { line: true },
+                    { text: '周期和批量', click: itemclick, icon: 'coffee', id: 'devicePeriodAmount' },
+                    { line: true },
+                    { text: '全部商品高低储情况', click: itemclick, icon: 'bookpen', id: 'deviceStorageInfo' }
+                    ]
+                },
+            });
+        }
+
+        function setStorage() {
+            gs = $("#storageid").ligerGrid({
+                height: '90%',
+                width: '98%',
+                columns: [
+                { display: '名称', name: 'Name',width:160 },
+                { display: '型号', name: 'Mode', width: 265},
+                { display: '品牌', name: 'Brand', width: 100 },
+                { display: '数量', name: 'Num',width:50 },
+                { display: '高储', name: 'MaxStorage', width: 120 },
+                { display: '低储', name: 'MinStorage', width: 120 }
+                ],
+                url: "/Statistics/GetAllStorage",
+                usePager: true,
+                pageSize: 15,
+                rownumbers: true,
+                checkbox:false,
+                toolbar: {
+                    items: [
+                    { text: '刷新', click: itemclick2, icon: 'refresh', id: 'storagerefresh' },
+                    ]
+                },
+            });
+        }
+
+        function setGrids2(key) {
+            g = $("#maingrid").ligerGrid({
+                height: '90%',
+                width: '100%',
+                columns: [
+                { display: '名称', name: 'Name' },
+                { display: '型号', name: 'Mode' },
+                { display: '品牌', name: 'Brand' },
+                { display: '数量', name: 'Num' },
+                { display: '价格', name: 'Price' },
+                { display: '货架编号', name: 'PlaceNumber' },
+                { display: '订货号', name: 'SeriesID' },
+                {
+                    display: '高低储', isAllowHide: false,
+                    render: function (row) {
+                        var htm = '<a href="javascript:void(0)" border="0" onclick="showStorage(' + row.ID + ')"> <img style="width:80px;height:25px;margin-top:3px;" src="../../images/showst.png">    </a>';
+                        return htm;
+                    }
+                }
+                ],
+                url: "/Device/GetDevice?key=" + key,
+                usePager: true,
+                pageSize: 15,
+                rownumbers: true,
+                toolbar: {
+                    items: [
+                    { text: '刷新', click: itemclick, icon: 'refresh', id: 'refreshDevice' },
+                    { line: true },
+                    { text: '增加设备', click: itemclick, icon: 'add', id: 'addDevice' },
+                    { line: true },
+                    { text: '修改设备', click: itemclick, icon: 'modify', id: 'modifyDevice' },
+                    { line: true },
+                    { text: '删除设备', click: itemclick, icon: 'delete', id: 'deleteDevice' },
+                    { line: true },
+                    { text: '出库', click: itemclick, icon: 'discuss', id: 'deviceOut' },
+                    { line: true },
+                    { text: '入库', click: itemclick, icon: 'customers', id: 'deviceIn' },
+                    { line: true },
+                    { text: '周期和批量', click: itemclick, icon: 'coffee', id: 'devicePeriodAmount' },
+                    { line: true },
+                    { text: '全部商品高低储情况', click: itemclick, icon: 'bookpen', id: 'deviceStorageInfo' },
+                    ]
+                },
+            });
+        }
+        function itemclick2(item) {
+            switch (item.id) {
+                case "storagerefresh":
+                    setStorage();
+                break;
+            }
+        }
+        function itemclick(item) {
+            switch (item.id) {
+                case "addDevice":
+                    if (addDeviceDialog) {
+                        addDeviceDialog.show();
+                    }
+                    else {
+                        addDeviceDialog = $.ligerDialog.open({
+                            target: $("#AddDeviceForms"), title: '添加设备信息',
+                            width: 450, height: 320, top: 70, left: 280,  // 弹出窗口大小
+                            buttons: [
+                                { text: '添加', onclick: function () { device_save(); } },
+                                { text: '取消', onclick: function () { addDeviceDialog.hide(); } }
+                            ]
+                        });
+                    }
+                    break;
+                case "modifyDevice":
+                    var selected = g.getSelecteds();
+                    if (selected.length == 0) { $.ligerDialog.warn('请选择行哦，亲！'); return; }
+                    if (selected.length > 1) { $.ligerDialog.warn('修改时只能选择一条数据哦，亲！'); return; }
+
+                    var data = g.getSelected();
+                    var form = liger.get('EditDeviceForms');
+                    // alert(liger.toJSON(data));
+                    form.setData({
+                        ID: data.ID,
+                        Name: data.Name,
+                        Mode: data.Mode,
+                        Brand: data.Brand,
+                        SeriesID: data.SeriesID,
+                        Num: data.Num,
+                        Price: data.Price,
+                        PlaceNumber: data.PlaceNumber,
+                    });
+
+
+                    if (editDeviceDialog) {
+                        editDeviceDialog.show();
+                    }
+                    else {
+                        editDeviceDialog = $.ligerDialog.open({
+                            target: $("#EditDeviceForms"), title: '修改设备信息',
+                            width: 450, height: 320, top: 70, left: 280,  // 弹出窗口大小
+                            buttons: [
+                                { text: '更新', onclick: function () { device_edit(); } },
+                                { text: '取消', onclick: function () { editDeviceDialog.hide(); } }
+                            ]
+                        });
+                    }
+                    break;
+                case "deleteDevice":
+                    var selected = g.getSelecteds();
+                    if (selected.length == 0) { $.ligerDialog.warn('请选择行哦，亲！'); return; }
+                    //alert(liger.toJSON(selected));
+                    $.ligerDialog.confirm('确定要删除这些数据吗?', function (tip) {
+                        if (tip == true) {
+                            device_delete(selected);
+                        }
+                        else {
+                            $.ligerDialog.tip({ title: '提示信息', content: '你取消了删除操作！' });
+                        }
+                    });
+                    break;
+
+                case "devicePeriodAmount":
+                    var selected = g.getSelecteds();
+                    if (selected.length == 0) { $.ligerDialog.warn('请选择行哦，亲！'); return; }
+                    if (selected.length > 1) { $.ligerDialog.warn('只能选择一条数据哦，亲！'); return; }
+
+                    var data = g.getSelected();
+                    var form = liger.get('AddDeviceDetailsForms');
+                    // alert(liger.toJSON(data));
+                    form.setData({
+                        DeviceID: data.ID,
+                    });
+
+
+                    if (addDeviceDetailsDialog) {
+                        addDeviceDetailsDialog.show();
+                    }
+                    else {
+                        addDeviceDetailsDialog = $.ligerDialog.open({
+                            target: $("#AddDeviceDetailsForms"), title: '设备周期和批量添加',
+                            width: 450, height: 160, top: 70, left: 280,  // 弹出窗口大小
+                            buttons: [
+                                { text: '添加', onclick: function () { deviceDetails_add(); } },
+                                { text: '取消', onclick: function () { addDeviceDetailsDialog.hide(); } }
+                            ]
+                        });
+                    }
+                    break;
+                case "refreshDevice":
+                    setGrids();
+                    break;
+                case "deviceIn":
+                    var selected = g.getSelecteds();
+                    if (selected.length == 0) { $.ligerDialog.warn('请选择行哦，亲！'); return; }
+                    if (selected.length > 1) { $.ligerDialog.warn('只能选择一条数据哦，亲！'); return; }
+
+                    var data = g.getSelected();
+                    var form = liger.get('AddDeviceInForms');
+                    //  alert(liger.toJSON(data));
+                    form.setData({
+                        DeviceID: data.ID,
+                        DeviceName: data.Name,
+                        Behavior: "入库",
+                        Mode: data.Mode
+                    });
+
+
+                    if (addDeviceInDialog) {
+                        addDeviceInDialog.show();
+                    }
+                    else {
+                        addDeviceInDialog = $.ligerDialog.open({
+                            target: $("#AddDeviceInForms"), title: '入库',
+                            width: 450, height: 320, top: 70, left: 280,  // 弹出窗口大小
+                            buttons: [
+                                { text: '添加', onclick: function () { deviceIn_add(); } },
+                                { text: '取消', onclick: function () { addDeviceInDialog.hide(); } }
+                            ]
+                        });
+                    }
+                    break;
+                case "deviceOut":
+                    var selected = g.getSelecteds();
+                    if (selected.length == 0) { $.ligerDialog.warn('请选择行哦，亲！'); return; }
+                    if (selected.length > 1) { $.ligerDialog.warn('只能选择一条数据哦，亲！'); return; }
+
+                    var data = g.getSelected();
+                    var form = liger.get('AddDeviceOutForms');
+                    //  alert(liger.toJSON(data));
+                    form.setData({
+                        DeviceID: data.ID,
+                        DeviceName: data.Name,
+                        Behavior: "出库",
+                        Mode: data.Mode
+                    });
+
+
+                    if (addDeviceOutDialog) {
+                        addDeviceOutDialog.show();
+                    }
+                    else {
+                        addDeviceOutDialog = $.ligerDialog.open({
+                            target: $("#AddDeviceOutForms"), title: '出库',
+                            width: 450, height: 320, top: 70, left: 280,  // 弹出窗口大小
+                            buttons: [
+                                { text: '添加', onclick: function () { deviceOut_add(); } },
+                                { text: '取消', onclick: function () { addDeviceOutDialog.hide(); } }
+                            ]
+                        });
+                    }
+                    break
+                case "deviceStorageInfo":
+
+                    if (storageDialog) {
+                        storageDialog.show();
+                    }
+                    else {
+                        storageDialog = $.ligerDialog.open({
+                            target: $("#storageForm"), title: '全部商品的高低储状态',
+                            width: 900, height: 400, top: 20, left: 180,  // 弹出窗口大小
+                            buttons: [
+                                { text: '取消', onclick: function () { storageDialog.hide(); } }
+                            ]
+                        });
+                    }
+                    break;
+
+            }
+        }
+
+        function showStorage(id) {
+            var data = "deviceID=" + id;
+            $.ajax({
+                url: "/Statistics/Storage", async: true,
+                data: data,
+                type: "post",
+                dataType: "json",
+                error: function (data) {
+                    $.ligerDialog.alert('系统错误!');
+                },
+                beforeSend: function () {
+                    $.ligerDialog.waitting("正在处理中,请稍后...");
+                },
+
+                complete: function () {
+                    $.ligerDialog.closeWaitting();
+                },
+                success: function (data) {
+                    var ma = data.Max;
+                    var mi = data.Min;
+                    if (data.Max == 9999999999999) {
+                        ma = "无数据";
+                    }
+                    if (data.Min == -1) {
+                        mi = "无数据";
+                    }
+
+                    $.ligerDialog.success('高储:' + ma + "<br/>" + "低储:" + mi);
+                },
+
+            });
+        }
+        function device_search() {
+            var data = searchForm.getData();
+            // alert(data.key);
+            if (data.key == "") {
+                $.ligerDialog.warn('请输入关键字哦，亲！');
+                return;
+            }
+            setGrids2(data.key);
+            g.loadData();
+        }
+
+        function device_save() {
+            var form = liger.get('AddDeviceForms');
+            if (form.valid()) {
+                var data = "jsonDevice=" + liger.toJSON(form.getData());
+                $.ajax({
+                    url: "/Device/AddDevice", async: true,
+                    data: data,
+                    type: "post",
+                    dataType: "json",
+                    error: function (data) {
+                        $.ligerDialog.alert('系统错误!');
+                    },
+                    beforeSend: function () {
+                        $.ligerDialog.waitting("正在处理中,请稍后...");
+                    },
+
+                    complete: function () {
+                        $.ligerDialog.closeWaitting();
+                    },
+                    success: function (data) {
+                        if (typeof (data.Succeed) != "undefined") {
+                            if (data.Succeed == true) {
+                                //$("input").val("");
+                                //$("#AddPeopleForms:input").val("");
+                                //$("#AddPeopleForms").filter(":input").val("");
+                                $("#AddDeviceForms")[0].reset();
+                                addDeviceDialog.hide();
+                                $.ligerDialog.alert("保存成功！");
+                                g.loadData();
+                                setStorage();
+                            }
+                            else {
+                                $.ligerDialog.alert(data.Error.Msg);
+                            }
+                        }
+                        else {
+                            $.ligerDialog.alert("操作失败！");
+                        }
+                    },
+
+                });
+            }
+            else {
+                form.showInvalid();
+            }
+        }
+
+        function device_edit() {
+            var form = liger.get('EditDeviceForms');
+            // alert(liger.toJSON(form.getData()));
+            if (form.valid()) {
+                var data = "jsonDevice=" + liger.toJSON(form.getData());
+                $.ajax({
+                    url: "/Device/UpdateDevice", async: true,
+                    data: data,
+                    type: "post",
+                    dataType: "json",
+                    error: function (data) {
+                        $.ligerDialog.alert('系统错误!');
+                    },
+                    beforeSend: function () {
+                        $.ligerDialog.waitting("正在处理修改中,请稍后...");
+                    },
+
+                    complete: function () {
+                        $.ligerDialog.closeWaitting();
+                    },
+                    success: function (data) {
+                        if (typeof (data.Succeed) != "undefined") {
+                            if (data.Succeed == true) {
+                                $("#EditDeviceForms")[0].reset();
+                                editDeviceDialog.hide();
+                                $.ligerDialog.alert("修改成功！");
+                                g.loadData();
+                                setStorage();
+                            }
+                            else {
+                                $.ligerDialog.alert(data.Error.Msg);
+                            }
+                        }
+                        else {
+                            $.ligerDialog.alert("操作失败！");
+                        }
+                    },
+
+                });
+            }
+            else {
+                form.showInvalid();
+            }
+        }
+
+        function device_delete(seletedData) {
+            var data = "jsonDevice=" + liger.toJSON(seletedData);
+            $.ajax({
+                url: "/Device/DeleteDevice", async: true,
+                data: data,
+                type: "post",
+                dataType: "json",
+                error: function (data) {
+                    $.ligerDialog.alert('系统错误!');
+                },
+                beforeSend: function () {
+                    $.ligerDialog.waitting("正在删除中,请稍后...");
+                },
+
+                complete: function () {
+                    $.ligerDialog.closeWaitting();
+                },
+                success: function (data) {
+                    if (typeof (data.Succeed) != "undefined") {
+                        if (data.Succeed == true) {
+                            $.ligerDialog.alert("删除成功！");
+                            g.loadData();
+                            setStorage();
+                        }
+                        else {
+                            $.ligerDialog.alert(data.Error.Msg);
+                        }
+                    }
+                    else {
+                        $.ligerDialog.alert("操作失败！");
+                    }
+                },
+            });
+
+        }
+
+        function deviceDetails_add() {
+            var form = liger.get('AddDeviceDetailsForms');
+            if (form.valid()) {
+                var data = "param=" + liger.toJSON(form.getData());
+                $.ajax({
+                    url: "/Device/AddDevicePeriodAmount", async: true,
+                    data: data,
+                    type: "post",
+                    dataType: "json",
+                    error: function (data) {
+                        $.ligerDialog.alert('系统错误!');
+                    },
+                    beforeSend: function () {
+                        $.ligerDialog.waitting("正在处理中,请稍后...");
+                    },
+
+                    complete: function () {
+                        $.ligerDialog.closeWaitting();
+                    },
+                    success: function (data) {
+                        if (typeof (data.Succeed) != "undefined") {
+                            if (data.Succeed == true) {
+                                //$("input").val("");
+                                //$("#AddPeopleForms:input").val("");
+                                //$("#AddPeopleForms").filter(":input").val("");
+                                $("#AddDeviceDetailsForms")[0].reset();
+                                addDeviceDetailsDialog.hide();
+                                $.ligerDialog.alert("保存成功！");
+                                g.loadData();
+                                setStorage();
+                            }
+                            else {
+                                $.ligerDialog.alert(data.Error.Msg);
+                            }
+                        }
+                        else {
+                            $.ligerDialog.alert("操作失败！");
+                        }
+                    },
+
+                });
+            }
+            else {
+                form.showInvalid();
+            }
+        }
+
+        function deviceIn_add() {
+            var form = liger.get('AddDeviceInForms');
+
+            if (form.valid()) {
+                var data = "param=" + liger.toJSON(form.getData());
+                $.ajax({
+                    url: "/Device/AddDeviceInOut", async: true,
+                    data: data,
+                    type: "post",
+                    dataType: "json",
+                    error: function (data) {
+                        $.ligerDialog.alert('系统错误!');
+                    },
+                    beforeSend: function () {
+                        $.ligerDialog.waitting("正在处理中,请稍后...");
+                    },
+
+                    complete: function () {
+                        $.ligerDialog.closeWaitting();
+                    },
+                    success: function (data) {
+                        if (typeof (data.Succeed) != "undefined") {
+                            if (data.Succeed == true) {
+                                //$("input").val("");
+                                //$("#AddPeopleForms:input").val("");
+                                //$("#AddPeopleForms").filter(":input").val("");
+                                $("#AddDeviceInForms")[0].reset();
+                                addDeviceInDialog.hide();
+                                $.ligerDialog.alert("入库成功！");
+                                g.loadData();
+                                setStorage();
+                            }
+                            else {
+                                $.ligerDialog.alert(data.Error.Msg);
+                            }
+                        }
+                        else {
+                            $.ligerDialog.alert("操作失败！");
+                        }
+                    },
+
+                });
+            }
+            else {
+                form.showInvalid();
+            }
+        }
+
+        function deviceOut_add() {
+            var form = liger.get('AddDeviceOutForms');
+
+            if (form.valid()) {
+                var data = "param=" + liger.toJSON(form.getData());
+                $.ajax({
+                    url: "/Device/AddDeviceInOut", async: true,
+                    data: data,
+                    type: "post",
+                    dataType: "json",
+                    error: function (data) {
+                        $.ligerDialog.alert('系统错误!');
+                    },
+                    beforeSend: function () {
+                        $.ligerDialog.waitting("正在处理中,请稍后...");
+                    },
+
+                    complete: function () {
+                        $.ligerDialog.closeWaitting();
+                    },
+                    success: function (data) {
+                        if (typeof (data.Succeed) != "undefined") {
+                            if (data.Succeed == true) {
+
+                                $("#AddDeviceOutForms")[0].reset();
+                                addDeviceOutDialog.hide();
+                                $.ligerDialog.alert("出库成功！");
+                                g.loadData();
+                                setStorage();
+                            }
+                            else {
+                                $.ligerDialog.alert(data.Error.Msg);
+                            }
+                        }
+                        else {
+                            $.ligerDialog.alert("操作失败！");
+                        }
+                    },
+
+                });
+            }
+            else {
+                form.showInvalid();
+            }
+        }
+
+        function getDevicePlaceData() {
+            //var jsondata="";
+            //$.ajax({
+            //    type: "POST", async: false,
+            //    url: "/Device/GetDevicePlaceWithNormal",
+            //    dataType: "json",
+            //    success: function (data) {
+            //        if (typeof (data.Succeed) != "undefined") {
+            //            if (data.Succeed == true) {
+            //                jsondata = liger.toJSON(data.Data).toString();
+            //            }
+            //        }
+            //    }
+            //});
+            //alert(jsondata);
+            //return jsondata;
+
+            return [
+                   { "ID": 1, "PNumber": "0SXD-234D-2454", "PName": "货架1" },
+                   { "ID": 2, "PNumber": "0SXD-234D-2412", "PName": "货架2" },
+                   { "ID": 3, "PNumber": "0SXD-234D-2423", "PName": "货架3" },
+                   { "ID": 4, "PNumber": "0SXD-234D-2415", "PName": "货架4" },
+                   { "ID": 5, "PNumber": "0SXD-234D-22E5", "PName": "货架5" },
+                   { "ID": 6, "PNumber": "0SXD-234D-2562", "PName": "货架6" },
+                   { "ID": 7, "PNumber": "0SXD-234D-2GFG", "PName": "货架7" },
+                   { "ID": 8, "PNumber": "0SXD-254D-2ETF", "PName": "货架8" },
+                   { "ID": 9, "PNumber": "0SXD-244D-22E2", "PName": "货架9" },
+                   { "ID": 10, "PNumber": "0SXD-334D-3WF2", "PName": "货架10" },
+            ]
+        }
+
+        function deleteRow() {
+            g.deleteSelectedRow();
+        }
+    </script>
+</head>
+
+<body style="overflow-x: hidden; padding: 2px;">
+    <div class="l-loading" style="display: block" id="pageloading"></div>
+    <div class="l-clear"></div>
+
+    <div id="mainsearch" style="width: 100%">
+        <div class="searchbox">
+            <form id="formsearch" class="l-form"></form>
+            <div id="btnsearch" title="可以输入设备名称、设备、品牌进行精确或者模糊查询！"></div>
+        </div>
+    </div>
+    <br />
+    <div id="maingrid"></div>
+    <div id="storageForm" style="display:none">
+       <div id="storageid"></div>
+    </div>
+
+    <form id="AddDeviceForms" style="display: none" class="liger-form" data-validate="{}">
+        <div class="fields">
+            <input data-type="text" data-label="名称" data-name="Name" data-group="基础信息" , validate="{required:true,minlength:2}" />
+            <input data-type="text" data-label="型号" data-name="Mode" validate="{required:true,minlength:2}" />
+            <input data-type="text" data-label="品牌" data-name="Brand" validate="{required:true,minlength:2}" />
+            <input data-type="number" data-label="订货号" data-name="SeriesID" validate="{required:true}" />
+            <input data-type="number" data-label="数量" data-name="Num" validate="{required:true}" />
+            <input data-type="number" data-label="价格" data-name="Price" validate="{required:true}" />
+            <li data-label="货架" data-type="select" data-name="PlaceNumber" data-width="200" validate="{required:true}">
+                <input class="editor" data-data="getDevicePlaceData()" data-textfield="PName" data-valuefield="PNumber" />
+            </li>
+        </div>
+
+    </form>
+
+    <form id="EditDeviceForms" style="display: none" class="liger-form" data-validate="{}">
+        <div class="fields">
+            <input data-type="hidden" data-name="ID">
+            <input data-type="text" data-label="名称" data-name="Name" data-editor="{disabled:true}" validate="{required:true,minlength:2}" />
+            <input data-type="text" data-label="型号" data-name="Mode" data-editor="{disabled:true}" validate="{required:true,minlength:2}" />
+            <input data-type="text" data-label="品牌" data-name="Brand" validate="{required:true,minlength:2}" />
+            <input data-type="number" data-label="订货号" data-name="SeriesID" validate="{required:true}" />
+            <input data-type="number" data-label="数量" data-name="Num" validate="{required:true}" />
+            <input data-type="number" data-label="价格" data-name="Price" validate="{required:true}" />
+            <li data-label="货架" data-type="select" data-name="PlaceNumber" data-width="200" validate="{required:true}">
+                <input class="editor" data-data="getDevicePlaceData()" data-textfield="PName" data-valuefield="PNumber" />
+            </li>
+        </div>
+    </form>
+
+    <form id="AddDeviceDetailsForms" style="display: none" class="liger-form" data-validate="{}">
+        <div class="fields">
+            <input data-type="hidden" data-name="DeviceID">
+            <input data-type="number" data-label="订货周期(天)" data-name="Period" data-group="基础信息" , validate="{required:true,minlength:2}" />
+            <input data-type="number" data-label="最小批量" data-name="Amount" validate="{required:true,minlength:2}" />
+        </div>
+    </form>
+
+    <form id="AddDeviceInForms" style="display: none" class="liger-form" data-validate="{}">
+        <div class="fields">
+            <input data-type="text" data-label="设备ID" data-editor="{disabled:true}" data-name="DeviceID" validate="{required:true,minlength:1}" />
+            <input data-type="text" data-label="设备名称" data-editor="{disabled:true}" data-name="DeviceName" validate="{required:true,minlength:1}" />
+            <input data-type="text" data-label="型号" data-editor="{disabled:true}" data-name="Mode" validate="{required:true,minlength:1}" />
+            <input data-type="text" data-label="行为" data-editor="{disabled:true}" data-name="Behavior" validate="{required:true,minlength:1}" />
+            <input data-type="number" data-label="数量" data-name="Num" validate="{required:true,minlength:1}" />
+            <input data-type="date" data-label="录入日期" data-name="DTime" validate="{required:true,minlength:2}" />
+        </div>
+    </form>
+    <form id="AddDeviceOutForms" style="display: none" class="liger-form" data-validate="{}">
+        <div class="fields">
+            <input data-type="text" data-label="设备ID" data-editor="{disabled:true}" data-name="DeviceID" validate="{required:true,minlength:1}" />
+            <input data-type="text" data-label="设备名称" data-editor="{disabled:true}" data-name="DeviceName" validate="{required:true,minlength:1}" />
+            <input data-type="text" data-label="型号" data-editor="{disabled:true}" data-name="Mode" validate="{required:true,minlength:1}" />
+            <input data-type="text" data-label="行为" data-editor="{disabled:true}" data-name="Behavior" validate="{required:true,minlength:1}" />
+            <input data-type="number" data-label="数量" data-name="Num" validate="{required:true,minlength:1}" />
+            <input data-type="date" data-label="录入日期" data-name="DTime" validate="{required:true,minlength:2}" />
+        </div>
+    </form>
+    <div style="display: none;">
+    </div>
+</body>
